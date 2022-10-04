@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Threading;
 using Twitter.Repo.Abstractions;
+using Xunit.Abstractions;
 
 namespace Twitter.Repo.Tests
 {
@@ -10,16 +12,18 @@ namespace Twitter.Repo.Tests
         private IServiceCollection services;
         private ServiceProvider serviceProvider;
         private IHttpClientFactory httpClientFactory;
-        IConfiguration config; 
+        IConfiguration config;
 
-        public SampleRepositoryTests()
+        private readonly ITestOutputHelper output;
+
+        public SampleRepositoryTests(ITestOutputHelper output)
         {
             config = new ConfigurationBuilder()
             .AddUserSecrets<SampleRepositoryTests>()
             .Build();
 
             services = new ServiceCollection();
-            services.AddHttpClient<ISampleRepository, SampleRepository>("twitter",_=>
+            services.AddHttpClient<ITweetRepository, TweetRepository>("twitter",_=>
             {
                 _.Timeout = TimeSpan.FromSeconds(3);
                 _.BaseAddress = new Uri("https://api.twitter.com");
@@ -27,6 +31,7 @@ namespace Twitter.Repo.Tests
             });
                 
             serviceProvider = services.BuildServiceProvider();
+            this.output = output;
         }
 
         [Fact]
@@ -34,9 +39,12 @@ namespace Twitter.Repo.Tests
         {
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
 
-            var target = new Twitter.Repo.SampleRepository(httpClientFactory);
+            using var logger = output.BuildLoggerFor<TweetRepository>();
+
+            var target = new TweetRepository(logger, httpClientFactory);
 
             CancellationTokenSource cancellationTokenSource = new();
+            
             await target.GetSampleStreamAsync(cancellationTokenSource.Token);
 
             Assert.NotEmpty(target.Tweets);
