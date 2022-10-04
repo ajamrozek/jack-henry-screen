@@ -16,14 +16,14 @@ namespace Twitter.Repo.Tests
 
         private readonly ITestOutputHelper output;
 
-        public SampleRepositoryTests(ITestOutputHelper output)
+        public TweetRepositoryTests(ITestOutputHelper output)
         {
             config = new ConfigurationBuilder()
-            .AddUserSecrets<SampleRepositoryTests>()
-            .Build();
+                .AddUserSecrets<TweetRepositoryTests>()
+                .Build();
 
             services = new ServiceCollection();
-            services.AddHttpClient<ITweetRepository, TweetRepository>("twitter",_=>
+            services.AddHttpClient<ITweetRepository, TweetRepository>("twitter", _=>
             {
                 _.Timeout = TimeSpan.FromSeconds(3);
                 _.BaseAddress = new Uri("https://api.twitter.com");
@@ -35,6 +35,7 @@ namespace Twitter.Repo.Tests
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public async void GetSampleStream_Nominal()
         {
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();

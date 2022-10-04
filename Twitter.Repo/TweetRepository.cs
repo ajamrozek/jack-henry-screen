@@ -20,25 +20,44 @@ public class TweetRepository : ITweetRepository
 
     public async Task GetSampleStreamAsync(CancellationToken cancellationToken)
     {
+        // log
         var logHeader = $"{nameof(GetSampleStreamAsync)}";
         logger.LogInformation($"{logHeader} Starting. "); 
+
+        // http call to Twitter stream headers
         using var response = await httpClient.GetAsync("/2/tweets/sample/stream",
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
+        
+        // ensure success
         response.EnsureSuccessStatusCode();
 
-        logger.LogInformation("Twitter Sample Stream Headers succeeded.");
+        // log
+        logger.LogInformation($"Twitter Sample Stream Headers succeeded. RateLimitRemaining: {response.Headers.GetValues("x-rate-limit-remaining").Single()}");
 
+        // parse content stream
         var stream = new StreamReader(await response.Content.ReadAsStreamAsync());
+        
+        // init line
         var line = await stream.ReadLineAsync();
+
+        // read to completion
         while (!string.IsNullOrEmpty(line))
         {
-            logger.LogInformation($"Tweet line read from stream: {line}");
+            // log line
+            logger.LogTrace($"Tweet line read from stream: {line}");
+
+            // deserialize line
             var tweet = JsonSerializer.Deserialize<Tweet>(line);
+
+            // add to underlying collection
             Tweets.Add(tweet);
+
+            // read next line
             line = await stream.ReadLineAsync();
         }
 
+        // log
         logger.LogInformation($"{logHeader} Ended. ");
 
     }
