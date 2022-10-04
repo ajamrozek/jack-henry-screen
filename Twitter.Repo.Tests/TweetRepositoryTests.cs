@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace Twitter.Repo.Tests
 {
-    public class SampleRepositoryTests
+    public class TweetRepositoryTests
     {
         private IServiceCollection services;
         private ServiceProvider serviceProvider;
