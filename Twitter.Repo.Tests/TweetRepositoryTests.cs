@@ -11,7 +11,6 @@ namespace Twitter.Repo.Tests
     {
         private IServiceCollection services;
         private ServiceProvider serviceProvider;
-        private IHttpClientFactory httpClientFactory;
         IConfiguration config;
 
         private readonly ITestOutputHelper output;

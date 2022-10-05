@@ -10,7 +10,7 @@ namespace Logic.Tests
         public void GetTopTenHashTags_Nominal()
         {
             var fakeTweetTexts = autoFixture
-                .CreateMany<string>(100)
+                .CreateMany<string>(100000)
                 .ToArray();
 
             var fakeHashtags = autoFixture

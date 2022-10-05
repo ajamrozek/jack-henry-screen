@@ -7,8 +7,6 @@ namespace WorkerService
         private readonly ILogger<QueuedWorker> logger;
         private readonly IServiceProvider serviceProvider;
         private readonly IBackgroundTaskQueue taskQueue;
-        public TweetRepository TweetRepo { private set; get; }
-        private readonly IConfiguration config;
 
         public QueuedWorker(ILogger<QueuedWorker> logger,
             IServiceProvider serviceProvider,

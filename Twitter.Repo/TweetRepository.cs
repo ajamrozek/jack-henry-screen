@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using Repo.Entities;
 using System.Net;
 using System.Text.Json;
-using System.Threading;
 using Twitter.Repo.Abstractions;
-using Twitter.Repo.Models;
 
 namespace Twitter.Repo;
 
@@ -21,6 +20,11 @@ public class TweetRepository : ITweetRepository
     }
     public List<Tweet> Tweets { private set; get; } = new List<Tweet>();
 
+    /// <summary>
+    /// Determines if the data provider is online with our access control.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<bool> CheckStatus(CancellationToken cancellationToken)
     {
         // http call to Twitter stream headers
@@ -40,6 +44,11 @@ public class TweetRepository : ITweetRepository
         return isUp;
     }
 
+    /// <summary>
+    /// Fills the Tweets collection from http calls to the data provider.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task GetSampleStreamAsync(CancellationToken cancellationToken)
     {
         // log
@@ -63,7 +72,7 @@ public class TweetRepository : ITweetRepository
         // init line
         var line = await stream.ReadLineAsync();
 
-        // read to completion
+        // read stream to completion
         while (!string.IsNullOrEmpty(line))
         {
             // log line
@@ -73,7 +82,7 @@ public class TweetRepository : ITweetRepository
             var tweet = JsonSerializer.Deserialize<Tweet>(line);
 
             // add to underlying collection
-            Tweets.Add(tweet);
+            Tweets.Add(tweet!);
 
             // read next line
             line = await stream.ReadLineAsync();
