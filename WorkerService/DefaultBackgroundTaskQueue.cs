@@ -4,19 +4,15 @@ namespace WorkerService;
 
 public class DefaultBackgroundTaskQueue : IBackgroundTaskQueue
 {
-    private readonly ILogger<DefaultBackgroundTaskQueue> logger;
-
     public Channel<Func<CancellationToken, ValueTask>> Queue { private set; get; }
 
-    public DefaultBackgroundTaskQueue(int capacity, 
-        ILogger<DefaultBackgroundTaskQueue> logger)
+    public DefaultBackgroundTaskQueue(int capacity)
     {
         BoundedChannelOptions options = new(capacity)
         {
             FullMode = BoundedChannelFullMode.Wait
         };
         Queue = Channel.CreateBounded<Func<CancellationToken, ValueTask>>(options);
-        this.logger = logger;
     }
 
     public ValueTask<bool> QueueBackgroundWorkItemAsync(

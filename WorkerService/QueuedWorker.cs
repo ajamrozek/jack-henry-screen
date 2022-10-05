@@ -24,8 +24,7 @@ namespace WorkerService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested &&
-                ((DefaultBackgroundTaskQueue)taskQueue).Queue.Reader.Count > 0)
+            while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {

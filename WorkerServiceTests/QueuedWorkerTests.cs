@@ -39,9 +39,7 @@ namespace WorkerServiceTests
         [Trait("Category", "Integration")]
         public void QueuedWorker_Ctor_Nominal()
         {
-            using var bgTaskQueueLogger = output.BuildLoggerFor<DefaultBackgroundTaskQueue>();
-            var bgTaskQueue = new DefaultBackgroundTaskQueue(3,
-                bgTaskQueueLogger);
+            var bgTaskQueue = new DefaultBackgroundTaskQueue(3);
 
             using var queuedWorkerLogger = output.BuildLoggerFor<QueuedWorker>();
             
@@ -61,13 +59,10 @@ namespace WorkerServiceTests
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
 
             using var queuedWorkerLogger = output.BuildLoggerFor<QueuedWorker>();
-            using var bgTaskQueueLogger = output.BuildLoggerFor<DefaultBackgroundTaskQueue>();
-
 
             CancellationTokenSource cancellationTokenSource = new();
 
-            var bgTaskQueue = new DefaultBackgroundTaskQueue(3,
-                bgTaskQueueLogger);
+            var bgTaskQueue = new DefaultBackgroundTaskQueue(3);
 
 
             var target = new QueuedWorker(queuedWorkerLogger,

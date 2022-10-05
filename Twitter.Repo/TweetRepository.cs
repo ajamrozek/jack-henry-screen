@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Text.Json;
+using System.Threading;
 using Twitter.Repo.Abstractions;
 using Twitter.Repo.Models;
 
@@ -7,6 +9,7 @@ namespace Twitter.Repo;
 
 public class TweetRepository : ITweetRepository
 {
+    private const string SampleStreamRequestUri = "/2/tweets/sample/stream";
     private readonly ILogger<TweetRepository> logger;
     private HttpClient httpClient;
 
@@ -17,6 +20,25 @@ public class TweetRepository : ITweetRepository
         this.logger = logger;
     }
     public List<Tweet> Tweets { private set; get; } = new List<Tweet>();
+
+    public async Task<bool> CheckStatus(CancellationToken cancellationToken)
+    {
+        // http call to Twitter stream headers
+        using var response = await httpClient.GetAsync(SampleStreamRequestUri,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+
+        var acceptibleStatusCodes = new[]
+        {
+            HttpStatusCode.OK,
+            HttpStatusCode.TooManyRequests
+        };
+        var isUp = acceptibleStatusCodes.Contains(response.StatusCode);
+
+        logger.Log(isUp ? LogLevel.Information : LogLevel.Critical, $"Twitter API is {(isUp ? "UP" : $"DOWN ({response.StatusCode})")}."  );
+
+        return isUp;
+    }
 
     public async Task GetSampleStreamAsync(CancellationToken cancellationToken)
     {

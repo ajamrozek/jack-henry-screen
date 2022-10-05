@@ -22,7 +22,6 @@ namespace WorkerServiceTests
         private readonly ITestOutputHelper output;
         private readonly ICacheLogger<TweetMonitor> tweetMonLogger;
         private readonly ICacheLogger<TweetRepository> tweetRepoLogger;
-        private readonly ICacheLogger<DefaultBackgroundTaskQueue> bgTaskQueueLogger;
 
         public TweetMonitorTests(ITestOutputHelper output)
         {
@@ -37,7 +36,6 @@ namespace WorkerServiceTests
 
             tweetMonLogger = output.BuildLoggerFor<TweetMonitor>();
             tweetRepoLogger = output.BuildLoggerFor<TweetRepository>(LogLevel.Information);
-            bgTaskQueueLogger = output.BuildLoggerFor<DefaultBackgroundTaskQueue>();
 
             services.AddSingleton(tweetRepoLogger);
 
@@ -84,8 +82,7 @@ namespace WorkerServiceTests
 
             CancellationTokenSource cancellationTokenSource = new();
 
-            var bgTaskQueue = new DefaultBackgroundTaskQueue(3,
-                bgTaskQueueLogger);
+            var bgTaskQueue = new DefaultBackgroundTaskQueue(3);
 
             var hostAppLifetime = Mock.Of<IHostApplicationLifetime>();
             Mock.Get(hostAppLifetime)
@@ -113,8 +110,7 @@ namespace WorkerServiceTests
 
             CancellationTokenSource cancellationTokenSource = new();
 
-            var bgTaskQueue = new DefaultBackgroundTaskQueue(3,
-                bgTaskQueueLogger);
+            var bgTaskQueue = new DefaultBackgroundTaskQueue(3);
 
             var hostAppLifetime = Mock.Of<IHostApplicationLifetime>();
             Mock.Get(hostAppLifetime)
@@ -145,8 +141,7 @@ namespace WorkerServiceTests
             CancellationTokenSource cancellationTokenSource = new();
             cancellationTokenSource.CancelAfter(3000);
 
-            var bgTaskQueue = new DefaultBackgroundTaskQueue(1,
-                bgTaskQueueLogger);
+            var bgTaskQueue = new DefaultBackgroundTaskQueue(1);
 
             var hostAppLifetime = Mock.Of<IHostApplicationLifetime>();
             Mock.Get(hostAppLifetime)
@@ -180,8 +175,7 @@ namespace WorkerServiceTests
             CancellationTokenSource cancellationTokenSource = new();
             cancellationTokenSource.CancelAfter(90000);
 
-            var bgTaskQueue = new DefaultBackgroundTaskQueue(3,
-                bgTaskQueueLogger);
+            var bgTaskQueue = new DefaultBackgroundTaskQueue(3);
 
 
             var hostAppLifetime = Mock.Of<IHostApplicationLifetime>();

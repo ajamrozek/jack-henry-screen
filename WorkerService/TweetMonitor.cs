@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Twitter.Repo;
 using Twitter.Repo.Abstractions;
 
@@ -9,7 +9,7 @@ public class TweetMonitor
     public IBackgroundTaskQueue TaskQueue { private set; get; }
     private readonly ILogger<TweetMonitor> logger;
     public TweetRepository TweetRepository { private set; get; }
-    private readonly CancellationToken cancellationToken;
+    private CancellationToken cancellationToken;
 
     public TweetMonitor(
         IBackgroundTaskQueue taskQueue,
@@ -25,11 +25,26 @@ public class TweetMonitor
 
     public async void StartMonitor()
     {
-        logger.LogInformation($"{nameof(MonitorAsync)} is starting.");
-
-        await MonitorAsync();
+        // check the Twitter status and exit if we have fatals
+        var isUp = await TweetRepository.CheckStatus(cancellationToken);
+        if (!isUp)
+        {
+            logger.LogCritical($"Unable to reach the data provider stream.");
+            var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cancellationTokenSource.Cancel();
+            cancellationToken = cancellationTokenSource.Token;
+        }
+        else
+        {
+            logger.LogInformation($"{nameof(MonitorAsync)} is starting.");
+            await MonitorAsync();
+        }
     }
 
+    /// <summary>
+    /// Continuously queues the operations while not cancelled and the queue is not full.  
+    /// </summary>
+    /// <returns></returns>
     private async ValueTask MonitorAsync()
     {
         var isQueueFull = false;
@@ -38,14 +53,29 @@ public class TweetMonitor
         {
             // Enqueue a background work item
             isQueueFull = await TaskQueue.QueueBackgroundWorkItemAsync(BuildWorkItemAsync);
+            string message = string.Empty;// $"Queue items: {((DefaultBackgroundTaskQueue)TaskQueue).Queue.Reader.Count}.";
+
+            if (!isQueueFull)
+            {
+                logger.LogInformation($"Queued a new operation. {message}");
+            }
+            else
+            {
+                logger.LogInformation($"Queue full. {message}");
+            }
         }
     }
 
+    /// <summary>
+    /// The working operation that hits the data provider.
+    /// </summary>
+    /// <param name="stoppingToken"></param>
+    /// <returns></returns>
     private async ValueTask BuildWorkItemAsync(CancellationToken stoppingToken)
     {
         var guid = Guid.NewGuid();
 
-        logger.LogInformation("Queued work item {Guid} is starting.", guid);
+        logger.LogInformation($"Queued work item {guid} is starting.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -64,7 +94,7 @@ public class TweetMonitor
                 // Prevent throwing if the provider call is cancelled
             }
 
-            logger.LogInformation("Queued work item {Guid} is done. ", guid);
+            logger.LogInformation($"Queued work item {guid} is done. ");
         }
 
     }
