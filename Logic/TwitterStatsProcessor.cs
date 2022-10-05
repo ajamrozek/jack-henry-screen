@@ -5,14 +5,14 @@ namespace Logic;
 
 public class TwitterStatsProcessor
 {
-    public static IEnumerable<string> GetTopTenHashTags(string[] tweetTexts) 
+    public static IEnumerable<string> GetTop(string[] tweetTexts, string matchPattern, int max = 10)
     {
         if (!tweetTexts.Any())
         {
             return Enumerable.Empty<string>();
         }
 
-        var regex = new Regex(@"\#\w+");
+        var regex = new Regex(matchPattern);
 
         var resultsDictionary = new Dictionary<string, long>();
         foreach (var tweetText in tweetTexts)
@@ -35,7 +35,9 @@ public class TwitterStatsProcessor
         var results = resultsDictionary
             .OrderByDescending(_ => _.Value)
             .Take(10)
-            .Select(_=>_.Key);
+            .Select(_ => _.Key);
         return results;
     }
+
+
 }

@@ -28,12 +28,30 @@ namespace Logic.Tests
                 {
                     var targetIdx = rand.Next(99);
                     fakeTweetTexts[targetIdx] += $" #{fakeHashtag}";
+                    targetIdx = rand.Next(99);
+                    fakeTweetTexts[targetIdx] += $" @{fakeHashtag}";
                 }
             }
 
-            var results = TwitterStatsProcessor.GetTopTenHashTags(fakeTweetTexts);
+            var results = TwitterStatsProcessor.GetTop(fakeTweetTexts, @"\#\w+");
 
             Assert.Equal(10, results.Count());
+
+            results = TwitterStatsProcessor.GetTop(fakeTweetTexts, @"\@\w+");
+
+            Assert.Equal(10, results.Count());
+
+
+            //var topTenHashtagsTask = Task.Factory.StartNew(() => TwitterStatsProcessor.GetTop(fakeTweetTexts!, @"\#\w+"));
+
+            //var topTenMentionsTask = Task.Factory.StartNew(() => TwitterStatsProcessor.GetTop(fakeTweetTexts!, @"\@\w+"));
+
+            //Task.WaitAll(new[] { topTenHashtagsTask, topTenMentionsTask });
+
+            //Assert.Equal(10, topTenHashtagsTask.Result.Count());
+            //Assert.Equal(10, topTenMentionsTask.Result.Count());
+
+
         }
     }
 }
