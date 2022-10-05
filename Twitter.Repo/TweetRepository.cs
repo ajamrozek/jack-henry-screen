@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Repo.Entities;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text.Json;
 using Twitter.Repo.Abstractions;
@@ -18,7 +19,11 @@ public class TweetRepository : ITweetRepository
         httpClient = httpClientFactory.CreateClient("twitter");
         this.logger = logger;
     }
+
+
     public List<Tweet> Tweets { private set; get; } = new List<Tweet>();
+
+    public ConcurrentDictionary<string, string> TweetDictionary { private set; get; } = new(); 
 
     /// <summary>
     /// Determines if the data provider is online with our access control.
@@ -81,8 +86,10 @@ public class TweetRepository : ITweetRepository
             // deserialize line
             var tweet = JsonSerializer.Deserialize<Tweet>(line);
 
-            // add to underlying collection
+            // add to underlying collection            
             Tweets.Add(tweet!);
+            TweetDictionary.TryAdd(tweet!.data.id, tweet!.data.text);
+
 
             // read next line
             line = await stream.ReadLineAsync();

@@ -5,33 +5,47 @@ namespace WorkerService
     public class QueuedWorker : BackgroundService
     {
         private readonly ILogger<QueuedWorker> logger;
-        private readonly IServiceProvider serviceProvider;
         private readonly IBackgroundTaskQueue taskQueue;
-
+        private readonly IConfiguration config;
+        private int asyncBatchSize;
         public QueuedWorker(ILogger<QueuedWorker> logger,
-            IServiceProvider serviceProvider,
-            IBackgroundTaskQueue taskQueue)
+            IBackgroundTaskQueue taskQueue,
+            IConfiguration config)
         {
             (this.logger,
-                this.serviceProvider,
-                this.taskQueue) = 
+                this.taskQueue,
+                this.config ) = 
                 (logger,
-                    serviceProvider,
-                    taskQueue);
+                    taskQueue,
+                    config);
+
+            // async batch size allows env config driven scaling to ingest multiple streams at once
+            if (!int.TryParse(config["AsyncBatchSize"], out var asyncBatchSize))
+            {
+                asyncBatchSize = 1;
+            }
+
+            this.asyncBatchSize = asyncBatchSize;
+
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            List<Task> taskBatch = new();
+
+            while (!stoppingToken.IsCancellationRequested &&
+                taskBatch.Count <= asyncBatchSize)
             {
                 try
                 {
                     Func<CancellationToken, ValueTask>? workItem = await taskQueue.DequeueAsync(stoppingToken);
 
-                    await workItem(stoppingToken);
+                    taskBatch.Add(workItem(stoppingToken).AsTask());
 
-                    stoppingToken = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken).Token;
-
+                    if(taskBatch.Count == asyncBatchSize)
+                    {
+                        Task.WaitAll(taskBatch.ToArray(), stoppingToken);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -46,8 +60,7 @@ namespace WorkerService
 
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
-            logger.LogInformation(
-                $"{nameof(QueuedWorker)} is stopping.");
+            logger.LogInformation($"{nameof(QueuedWorker)} is stopping.");
 
             await base.StopAsync(stoppingToken);
         }
