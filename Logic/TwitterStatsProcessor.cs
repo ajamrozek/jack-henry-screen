@@ -3,9 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace Logic;
 
-public static class TwitterStatsProcessor
+public class TwitterStatsProcessor
 {
-    public static IEnumerable<string> GetTopByRegex(this string[] tweetTexts, string matchPattern, int n = 10)
+    public static IEnumerable<string> GetTop(string[] tweetTexts, string matchPattern, int max = 10)
     {
         if (!tweetTexts.Any())
         {
@@ -34,7 +34,7 @@ public static class TwitterStatsProcessor
 
         var results = resultsDictionary
             .OrderByDescending(_ => _.Value)
-            .Take(n)
+            .Take(10)
             .Select(_ => _.Key);
         return results;
     }

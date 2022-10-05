@@ -22,6 +22,7 @@ namespace WorkerServiceTests
             config = new ConfigurationBuilder()
                 .AddUserSecrets<TweetMonitorTests>()
                 .Build();
+
             services = new ServiceCollection();
             services.AddHttpClient<ITweetRepository, TweetRepository>("twitter", _ =>
             {
@@ -43,18 +44,16 @@ namespace WorkerServiceTests
             using var queuedWorkerLogger = output.BuildLoggerFor<QueuedWorker>();
             
             var target = new QueuedWorker(queuedWorkerLogger,
-                bgTaskQueue,
-                config);
+                serviceProvider,
+                bgTaskQueue);
 
             Assert.NotNull(target);
         }
 
 
-        [Theory]
-        [InlineData(1)]
-        [InlineData(3)]
+        [Fact]
         [Trait("Category", "Integration")]
-        public async void QueuedWorker_Dequeue_Nominal(int asyncBatchSize)
+        public async void QueuedWorker_Dequeue_Nominal()
         {
 
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
@@ -65,11 +64,10 @@ namespace WorkerServiceTests
 
             var bgTaskQueue = new DefaultBackgroundTaskQueue(3);
 
-            config["AsyncBatchSize"] = $"{asyncBatchSize}";
 
             var target = new QueuedWorker(queuedWorkerLogger,
-                bgTaskQueue,
-                config);
+                serviceProvider,
+                bgTaskQueue);
 
             await target.StartAsync(cancellationTokenSource.Token);
 

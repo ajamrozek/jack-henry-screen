@@ -33,11 +33,11 @@ namespace Logic.Tests
                 }
             }
 
-            var results = TwitterStatsProcessor.GetTopByRegex(fakeTweetTexts, @"\#\w+");
+            var results = TwitterStatsProcessor.GetTop(fakeTweetTexts, @"\#\w+");
 
             Assert.Equal(10, results.Count());
 
-            results = TwitterStatsProcessor.GetTopByRegex(fakeTweetTexts, @"\@\w+");
+            results = TwitterStatsProcessor.GetTop(fakeTweetTexts, @"\@\w+");
 
             Assert.Equal(10, results.Count());
 

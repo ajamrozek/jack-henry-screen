@@ -77,20 +77,18 @@ QueuedWorker worker = serviceProvider
 
 await worker.StartAsync(CancellationToken.None);
 
-// single API Endpoint
-// This is the only owner of statistic invocations.
-// Other mechanisms may be considered that involve persistence. Enabling this endpoint to read those sources and abandon calulating the stats itself.
+// setup single API Endpoint
+// This is the only owner of statistic invocations. Other mechanisms may be considered that involve persistence that enable this endpoint to read those sources and abandon calulating the stats itself.
 app.MapGet("/stats", () =>
 {
     var tweetRepo = monitor.TweetRepository;
-    //var tweetTexts = tweetRepo.Tweets.Select(_ => _?.data?.text).ToArray();
-    var tweetTexts = tweetRepo.TweetDictionary.Select(_ => _.Value).ToArray();
-    var topTenHashtags = tweetTexts!.GetTopByRegex(@"\#\w+");
-    var topTenMentions = tweetTexts!.GetTopByRegex(@"\@\w+");
+    var tweetTexts = tweetRepo.Tweets.Select(_ => _?.data?.text).ToArray();
+    var topTenHashtags = TwitterStatsProcessor.GetTop(tweetTexts!, @"\#\w+");
+    var topTenMentions = TwitterStatsProcessor.GetTop(tweetTexts!, @"\@\w+");
 
     var statResult = new Statistic()
     {
-        Count = tweetRepo.TweetDictionary.Count,
+        Count = tweetRepo.Tweets.Count,
         TopTenHashtags = topTenHashtags.ToArray(),
         TopTenMentions = topTenMentions.ToArray(),
         AsOf = DateTime.UtcNow
