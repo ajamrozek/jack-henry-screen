@@ -5,8 +5,13 @@ namespace Logic
 {
     public class TwitterStatsProcessor
     {
-        public IEnumerable<string> GetTopTenHashTags(string[] tweetTexts) 
+        public static IEnumerable<string> GetTopTenHashTags(string[] tweetTexts) 
         {
+            if (!tweetTexts.Any())
+            {
+                return Enumerable.Empty<string>();
+            }
+
             var regex = new Regex(@"\#\w+");
             var resultsDictionary = new Dictionary<string, long>();
             foreach (var tweetText in tweetTexts)

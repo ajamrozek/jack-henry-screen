@@ -7,7 +7,7 @@ namespace WorkerService
         private readonly ILogger<QueuedWorker> logger;
         private readonly IServiceProvider serviceProvider;
         private readonly IBackgroundTaskQueue taskQueue;
-        private readonly TweetRepository twitterSampleRepo;
+        public TweetRepository TweetRepo { private set; get; }
         private readonly IConfiguration config;
 
         public QueuedWorker(ILogger<QueuedWorker> logger,
@@ -24,12 +24,12 @@ namespace WorkerService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            while (!stoppingToken.IsCancellationRequested &&
+                ((DefaultBackgroundTaskQueue)taskQueue).Queue.Reader.Count > 0)
             {
                 try
                 {
-                    Func<CancellationToken, ValueTask>? workItem =
-                        await taskQueue.DequeueAsync(stoppingToken);
+                    Func<CancellationToken, ValueTask>? workItem = await taskQueue.DequeueAsync(stoppingToken);
 
                     await workItem(stoppingToken);
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Twitter.Repo;
+using Twitter.Repo.Abstractions;
 
 namespace WorkerService;
 
@@ -7,7 +8,7 @@ public class TweetMonitor
 {
     public IBackgroundTaskQueue TaskQueue { private set; get; }
     private readonly ILogger<TweetMonitor> logger;
-    private readonly TweetRepository tweetRepository;
+    public TweetRepository TweetRepository { private set; get; }
     private readonly CancellationToken cancellationToken;
 
     public TweetMonitor(
@@ -18,7 +19,7 @@ public class TweetMonitor
     {
         this.TaskQueue = taskQueue;
         this.logger = logger;
-        this.tweetRepository = tweetRepository;
+        this.TweetRepository = tweetRepository;
         cancellationToken = applicationLifetime.ApplicationStopping;
     }
 
@@ -53,9 +54,9 @@ public class TweetMonitor
                 logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
 
                 // call the provider
-                await tweetRepository.GetSampleStreamAsync(stoppingToken);
+                await TweetRepository.GetSampleStreamAsync(stoppingToken);
 
-                logger.LogInformation($"TweetRepo.Tweets: {tweetRepository.Tweets.Count}");
+                logger.LogInformation($"TweetRepo.Tweets: {TweetRepository.Tweets.Count}");
                 
             }
             catch (OperationCanceledException)

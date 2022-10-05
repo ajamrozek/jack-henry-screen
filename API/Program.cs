@@ -1,13 +1,42 @@
+using Logic;
+using Polly.Extensions.Http;
+using Polly;
+using Twitter.Repo;
+using Twitter.Repo.Abstractions;
 using WorkerService;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddHttpClient<ITweetRepository, TweetRepository>("twitter", _ =>
+{
+    _.Timeout = TimeSpan.FromSeconds(3);
+    _.BaseAddress = new Uri("https://api.twitter.com");
+    _.DefaultRequestHeaders.Add("Authorization", $"Bearer {builder.Configuration.GetSection("ApiToken").Value}");
+})
+.SetHandlerLifetime(TimeSpan.FromMinutes(5))
+.AddPolicyHandler((provider, request) => GetRetryPolicy(provider));
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddSingleton<TweetMonitor>();
+builder.Services.AddHostedService(_=>_.GetRequiredService<QueuedWorker>());
+
+builder.Services.AddSingleton<QueuedWorker>();
+builder.Services.AddSingleton<IBackgroundTaskQueue>(_ =>
+{
+    if (!int.TryParse(builder.Configuration["QueueCapacity"], out var queueCapacity))
+    {
+        queueCapacity = 3;
+    }
+
+    var logger = _.GetService<ILogger<DefaultBackgroundTaskQueue>>();
+
+    return new DefaultBackgroundTaskQueue(queueCapacity, logger);
+}); 
+builder.Services.AddSingleton<TweetRepository>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 var app = builder.Build();
 
@@ -19,29 +48,45 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+var serviceProvider = builder.Services.BuildServiceProvider();
+TweetMonitor monitor = serviceProvider.GetService<TweetMonitor>();
 
-var summaries = new[]
+app.MapGet("/stats", () =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var tweetRepo = monitor.TweetRepository;
+    var topTenHashtags = TwitterStatsProcessor.GetTopTenHashTags(tweetRepo.Tweets
+        .Select(_=>_?.data?.text)
+        .ToArray());
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    return new { count = tweetRepo.Tweets.Count, topTenHashtags };
 })
-.WithName("GetWeatherForecast");
+.WithName("GetStats");
+
+monitor.StartMonitor();
+
+QueuedWorker worker = serviceProvider
+     .GetServices<IHostedService>()
+     .OfType<QueuedWorker>()
+     .FirstOrDefault();
+
+await worker.StartAsync(CancellationToken.None);
 
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
+IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(IServiceProvider policyServiceProvider)
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    var retryCodes = new[] {
+                System.Net.HttpStatusCode.NotFound,
+                System.Net.HttpStatusCode.TooManyRequests};
+
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(msg => retryCodes.Any(_ => _ == msg.StatusCode))
+        .WaitAndRetryAsync(6,
+            retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+            (result, timeSpan, retryCount, context) =>
+            {
+                var logger = policyServiceProvider.GetService<ILogger<TweetRepository>>();
+                logger.LogWarning($"Polly retry {retryCount} triggered. Retrying Twitter in {timeSpan.TotalSeconds} seconds.");
+            });
 }

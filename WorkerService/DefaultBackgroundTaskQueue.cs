@@ -19,7 +19,7 @@ public class DefaultBackgroundTaskQueue : IBackgroundTaskQueue
         this.logger = logger;
     }
 
-    public async ValueTask<bool> QueueBackgroundWorkItemAsync(
+    public ValueTask<bool> QueueBackgroundWorkItemAsync(
         Func<CancellationToken, ValueTask> workItem)
     {
         if (workItem is null)
@@ -27,8 +27,7 @@ public class DefaultBackgroundTaskQueue : IBackgroundTaskQueue
             throw new ArgumentNullException(nameof(workItem));
         }
 
-        //await Queue.Writer.WriteAsync(workItem);
-        return !Queue.Writer.TryWrite(workItem);        
+        return new ValueTask<bool>(!Queue.Writer.TryWrite(workItem));        
     }
 
     public async ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(CancellationToken cancellationToken)

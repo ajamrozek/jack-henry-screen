@@ -76,9 +76,6 @@ namespace WorkerServiceTests
 
             await target.StartAsync(cancellationTokenSource.Token);
 
-            await target.ExecuteTask;// bgTaskQueue.QueueBackgroundWorkItemAsync((CancellationToken token) => { });
-
-
         }
     }
 }

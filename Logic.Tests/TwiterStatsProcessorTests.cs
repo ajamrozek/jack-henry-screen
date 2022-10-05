@@ -31,10 +31,7 @@ namespace Logic.Tests
                 }
             }
 
-            var target = new TwitterStatsProcessor();
-
-
-            var results = target.GetTopTenHashTags(fakeTweetTexts);
+            var results = TwitterStatsProcessor.GetTopTenHashTags(fakeTweetTexts);
 
             Assert.Equal(10, results.Count());
         }
