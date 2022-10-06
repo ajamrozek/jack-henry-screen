@@ -6,9 +6,9 @@ public class DefaultBackgroundTaskQueue : IBackgroundTaskQueue
 {
     public Channel<Func<CancellationToken, ValueTask>> Queue { private set; get; }
 
-    public DefaultBackgroundTaskQueue()
+    public DefaultBackgroundTaskQueue(int capacity)
     {
-        BoundedChannelOptions options = new(1)
+        BoundedChannelOptions options = new(capacity)
         {
             FullMode = BoundedChannelFullMode.Wait
         };

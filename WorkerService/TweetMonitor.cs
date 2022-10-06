@@ -15,11 +15,11 @@ public class TweetMonitor
         IBackgroundTaskQueue taskQueue,
         ILogger<TweetMonitor> logger,
         IHostApplicationLifetime applicationLifetime,
-        ITweetRepository tweetRepository)
+        TweetRepository tweetRepository)
     {
         this.TaskQueue = taskQueue;
         this.logger = logger;
-        this.TweetRepository = tweetRepository as TweetRepository;
+        this.TweetRepository = tweetRepository;
         cancellationToken = applicationLifetime.ApplicationStopping;
     }
 
