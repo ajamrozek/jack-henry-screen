@@ -6,6 +6,6 @@ To apply your API Token, apply it to the appsettings.json or secrets.json
 
 `
 "Twitter": {
-    "ApiToken": "[insert token here or in user secrets file]"
+    "ApiToken": "[insert token here]"
   }
 `
