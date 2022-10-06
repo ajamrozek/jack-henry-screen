@@ -23,7 +23,7 @@ public class TweetMonitor
         cancellationToken = applicationLifetime.ApplicationStopping;
     }
 
-    public async void StartMonitor()
+    public async Task  StartMonitor()
     {
         // check the Twitter status and exit if we have fatals
         var isUp = await TweetRepository.CheckStatus(cancellationToken);

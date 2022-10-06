@@ -34,12 +34,7 @@ builder.Services.AddSingleton<QueuedWorker>();
 // add bgTaskQueue for DI
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ =>
 {
-    if (!int.TryParse(builder.Configuration["QueueCapacity"], out var queueCapacity))
-    {
-        queueCapacity = 3;
-    }
-
-    return new DefaultBackgroundTaskQueue(queueCapacity);
+   return new DefaultBackgroundTaskQueue(1);
 }); 
 
 // add TweetRepo for DI

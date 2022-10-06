@@ -101,7 +101,7 @@ namespace WorkerServiceTests
 
         [Fact]
         [Trait("Category", "Integration")]
-        public void TweetMonitor_StartMonitor_Nominal()
+        public async void TweetMonitor_StartMonitor_Nominal()
         {
 
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
@@ -110,7 +110,7 @@ namespace WorkerServiceTests
 
             CancellationTokenSource cancellationTokenSource = new();
 
-            var bgTaskQueue = new DefaultBackgroundTaskQueue(3);
+            var bgTaskQueue = new DefaultBackgroundTaskQueue(1);
 
             var hostAppLifetime = Mock.Of<IHostApplicationLifetime>();
             Mock.Get(hostAppLifetime)
@@ -122,7 +122,7 @@ namespace WorkerServiceTests
                 hostAppLifetime,
                 tweetRepo);
 
-            target.StartMonitor();
+            await target.StartMonitor();
 
             Assert.NotNull(bgTaskQueue.Queue);
             Assert.Equal(1,bgTaskQueue.Queue.Reader.Count);
