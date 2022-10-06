@@ -34,16 +34,11 @@ builder.Services.AddSingleton<QueuedWorker>();
 // add bgTaskQueue for DI
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ =>
 {
-    if (!int.TryParse(builder.Configuration["QueueCapacity"], out var queueCapacity))
-    {
-        queueCapacity = 3;
-    }
-
-    return new DefaultBackgroundTaskQueue(queueCapacity);
-}); 
+    return new DefaultBackgroundTaskQueue();
+});
 
 // add TweetRepo for DI
-builder.Services.AddSingleton<TweetRepository>();
+builder.Services.AddSingleton<ITweetRepository, TweetRepository>();
 
 // add EndpointsExplorer for DI
 builder.Services.AddEndpointsApiExplorer();
@@ -81,14 +76,15 @@ await worker.StartAsync(CancellationToken.None);
 // This is the only owner of statistic invocations. Other mechanisms may be considered that involve persistence that enable this endpoint to read those sources and abandon calulating the stats itself.
 app.MapGet("/stats", () =>
 {
-    var tweetRepo = monitor.TweetRepository;
-    var tweetTexts = tweetRepo.Tweets.Select(_ => _?.data?.text).ToArray();
+    var tweetTexts = monitor.TweetRepository.Tweets.Any() 
+        ? monitor.TweetRepository.Tweets.Select(_ => _?.data?.text).ToArray()
+        : Array.Empty<string>();
     var topTenHashtags = TwitterStatsProcessor.GetTop(tweetTexts!, @"\#\w+");
     var topTenMentions = TwitterStatsProcessor.GetTop(tweetTexts!, @"\@\w+");
 
     var statResult = new Statistic()
     {
-        Count = tweetRepo.Tweets.Count,
+        Count = tweetTexts.Count(),
         TopTenHashtags = topTenHashtags.ToArray(),
         TopTenMentions = topTenMentions.ToArray(),
         AsOf = DateTime.UtcNow
@@ -112,9 +108,9 @@ IAsyncPolicy<HttpResponseMessage> GetNominalRetryPolicy(IServiceProvider policyS
         .HandleTransientHttpError()
         .OrResult(msg => retryCodes.Any(_ => _ == msg.StatusCode))
         .WaitAndRetryAsync(6,
-            retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+            (retryCount) => TimeSpan.FromSeconds(Math.Pow(2, retryCount)),
             (result, timeSpan, retryCount, context) =>
-            {                
+            {            
                 var logger = policyServiceProvider.GetService<ILogger<TweetRepository>>()!;
                 logger.LogWarning($"Polly retry {retryCount} triggered by {result.Result.StatusCode}: {result.Result.ReasonPhrase}. \nRetrying Twitter in {timeSpan.TotalSeconds} seconds.");
             });
