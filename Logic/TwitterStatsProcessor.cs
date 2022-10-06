@@ -34,7 +34,7 @@ public class TwitterStatsProcessor
 
         var results = resultsDictionary
             .OrderByDescending(_ => _.Value)
-            .Take(10)
+            .Take(max)
             .Select(_ => _.Key);
         return results;
     }
